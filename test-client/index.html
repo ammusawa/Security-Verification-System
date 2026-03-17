@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Auth-as-a-Service – Test client (Aminu Agro)</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --border: #334155;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --success: #22c55e;
+      --danger: #ef4444;
+      --radius: 8px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      min-height: 100vh;
+      padding: 1.5rem;
+    }
+    .container { max-width: 440px; margin: 0 auto; }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.75rem;
+      margin-bottom: 1.25rem;
+    }
+    h1 { margin: 0 0 0.25rem; font-size: 1.25rem; }
+    h2 { margin: 0 0 0.75rem; font-size: 1rem; color: var(--muted); }
+    .subtitle { color: var(--muted); font-size: 0.875rem; margin-bottom: 1rem; }
+    label { display: block; font-size: 0.8125rem; font-weight: 600; margin-bottom: 0.35rem; }
+    input {
+      width: 100%;
+      padding: 0.6rem 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 0.9375rem;
+      margin-bottom: 1rem;
+    }
+    input::placeholder { color: var(--muted); }
+    button {
+      width: 100%;
+      padding: 0.65rem 1rem;
+      border: none;
+      border-radius: 6px;
+      background: #3b82f6;
+      color: #fff;
+      font-size: 0.9375rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button:hover { background: #2563eb; }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+    button.secondary { background: var(--border); }
+    button.secondary:hover { background: #475569; }
+    .result {
+      margin-top: 1rem;
+      padding: 0.75rem 1rem;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      display: none;
+    }
+    .result.success { display: block; background: rgba(34, 197, 94, 0.15); border: 1px solid var(--success); color: #86efac; }
+    .result.error { display: block; background: rgba(239, 68, 68, 0.15); border: 1px solid var(--danger); color: #fca5a5; }
+    .result pre { margin: 0.35rem 0 0; font-size: 0.8125rem; overflow-x: auto; white-space: pre-wrap; }
+    .note { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); font-size: 0.75rem; color: var(--muted); line-height: 1.5; }
+    .section { margin-top: 1.5rem; }
+    .hidden { display: none !important; }
+    .link { color: #60a5fa; text-decoration: none; }
+    .link:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>Test client</h1>
+      <p class="subtitle">Auth-as-a-Service – use your API key to register and sign in as this app</p>
+
+      <label for="baseUrl">API base URL</label>
+      <input type="text" id="baseUrl" value="http://localhost:5000" placeholder="http://localhost:5000" />
+
+      <label for="apiKey">API key</label>
+      <input type="password" id="apiKey" placeholder="sk_live_..." autocomplete="off" />
+
+      <button type="button" id="testBtn">Test API key</button>
+      <div id="pingResult" class="result" role="status"></div>
+    </div>
+
+    <div id="appSection" class="card hidden">
+      <h2 id="appName">App</h2>
+      <p class="subtitle">Register a new user or sign in with an existing account for this app.</p>
+
+      <div class="section">
+        <strong>Register</strong>
+        <form id="registerForm">
+          <label for="regUsername">Username</label>
+          <input id="regUsername" type="text" required autocomplete="username" />
+          <label for="regEmail">Email</label>
+          <input id="regEmail" type="email" required autocomplete="email" />
+          <label for="regPassword">Password</label>
+          <input id="regPassword" type="password" required autocomplete="new-password" minlength="6" />
+          <button type="submit" id="registerBtn">Register</button>
+        </form>
+        <div id="registerResult" class="result"></div>
+      </div>
+
+      <div class="section">
+        <strong>Login</strong>
+        <div id="loginStep1">
+          <label for="loginUsername">Username</label>
+          <input id="loginUsername" type="text" autocomplete="username" />
+          <button type="button" id="loginStartBtn">Continue</button>
+        </div>
+        <div id="loginStep2" class="hidden">
+          <label for="loginPassword">Password</label>
+          <input id="loginPassword" type="password" autocomplete="current-password" />
+          <button type="button" id="loginPwBtn">Sign in</button>
+          <button type="button" id="loginBackBtn" class="secondary">Back</button>
+        </div>
+        <div id="loginStepOtp" class="hidden">
+          <label for="loginOtp">Verification code (check your email)</label>
+          <input id="loginOtp" type="text" placeholder="6 digits" maxlength="8" autocomplete="one-time-code" />
+          <button type="button" id="loginOtpBtn">Verify</button>
+        </div>
+        <div id="loginResult" class="result"></div>
+      </div>
+
+      <div class="note">
+        To manage this app (users, API keys) as <strong>app admin</strong>, sign in at the main app:
+        <a class="link" href="http://localhost:3000/login" target="_blank" rel="noopener">http://localhost:3000/login</a>
+        using your app admin username and password.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const baseUrlEl = document.getElementById('baseUrl');
+    const apiKeyEl = document.getElementById('apiKey');
+    const testBtn = document.getElementById('testBtn');
+    const pingResultEl = document.getElementById('pingResult');
+    const appSectionEl = document.getElementById('appSection');
+    const appNameEl = document.getElementById('appName');
+    const registerForm = document.getElementById('registerForm');
+    const registerResultEl = document.getElementById('registerResult');
+    const loginStep1 = document.getElementById('loginStep1');
+    const loginStep2 = document.getElementById('loginStep2');
+    const loginStepOtp = document.getElementById('loginStepOtp');
+    const loginResultEl = document.getElementById('loginResult');
+
+    let baseUrl = '';
+    let apiKey = '';
+    let sessionToken = '';
+    let requireOtp = false;
+    let requireFace = false;
+
+    function headerSafe(str) {
+      return str.replace(/[^\x00-\xFF]/g, '');
+    }
+
+    function apiHeaders() {
+      return {
+        'Content-Type': 'application/json',
+        'X-API-Key': apiKey,
+        'Accept': 'application/json',
+      };
+    }
+
+    function showPingResult(type, message, data) {
+      pingResultEl.className = 'result ' + type;
+      pingResultEl.innerHTML = message;
+      if (data && Object.keys(data).length > 0) {
+        pingResultEl.innerHTML += '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+      }
+    }
+
+    testBtn.addEventListener('click', async () => {
+      baseUrl = baseUrlEl.value.trim().replace(/\/$/, '');
+      const rawKey = apiKeyEl.value.trim();
+      apiKey = headerSafe(rawKey);
+
+      if (!baseUrl) {
+        showPingResult('error', 'Please enter the API base URL.');
+        return;
+      }
+      if (!rawKey) {
+        showPingResult('error', 'Please enter your API key.');
+        return;
+      }
+      if (rawKey.length !== apiKey.length) {
+        showPingResult('error', 'API key contained invalid characters. Please paste the key again.');
+        return;
+      }
+
+      testBtn.disabled = true;
+      pingResultEl.className = 'result';
+      pingResultEl.textContent = 'Checking…';
+
+      try {
+        const res = await fetch(`${baseUrl}/api/v1/ping`, {
+          method: 'GET',
+          headers: { 'X-API-Key': apiKey, 'Accept': 'application/json' },
+        });
+        const data = await res.json().catch(() => ({}));
+
+        if (res.ok && data.ok) {
+          showPingResult('success', `API key is valid. You can register and sign in below.`, data);
+          appSectionEl.classList.remove('hidden');
+          appNameEl.textContent = data.app_name || ('App ID ' + data.app_id);
+        } else {
+          showPingResult('error', data.error || res.statusText || 'Invalid key', data);
+        }
+      } catch (err) {
+        showPingResult('error', err.message + ' (check backend and CORS)');
+      } finally {
+        testBtn.disabled = false;
+      }
+    });
+
+    // ---- Register ----
+    registerForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!baseUrl || !apiKey) return;
+      const username = document.getElementById('regUsername').value.trim();
+      const email = document.getElementById('regEmail').value.trim();
+      const password = document.getElementById('regPassword').value;
+      registerResultEl.className = 'result';
+      registerResultEl.textContent = 'Registering…';
+      registerResultEl.classList.remove('hidden');
+      try {
+        const res = await fetch(`${baseUrl}/api/v1/register`, {
+          method: 'POST',
+          headers: apiHeaders(),
+          body: JSON.stringify({ username, email, password }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.ok) {
+          registerResultEl.className = 'result success';
+          registerResultEl.innerHTML = 'Registered. You can sign in above.';
+        } else {
+          registerResultEl.className = 'result error';
+          registerResultEl.textContent = data.error || 'Registration failed';
+        }
+      } catch (err) {
+        registerResultEl.className = 'result error';
+        registerResultEl.textContent = err.message;
+      }
+    });
+
+    // ---- Login ----
+    document.getElementById('loginStartBtn').addEventListener('click', async () => {
+      const username = document.getElementById('loginUsername').value.trim();
+      if (!username) return;
+      loginResultEl.className = 'result';
+      loginResultEl.textContent = '';
+      loginResultEl.classList.add('hidden');
+      try {
+        const res = await fetch(`${baseUrl}/api/v1/login/start`, {
+          method: 'POST',
+          headers: apiHeaders(),
+          body: JSON.stringify({ username }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          loginResultEl.classList.remove('hidden');
+          loginResultEl.className = 'result error';
+          loginResultEl.textContent = data.error || 'Failed';
+          return;
+        }
+        sessionToken = data.session_token;
+        requireOtp = data.steps && data.steps.otp;
+        requireFace = data.steps && data.steps.face;
+        loginStep1.classList.add('hidden');
+        loginStep2.classList.remove('hidden');
+        document.getElementById('loginPassword').value = '';
+      } catch (err) {
+        loginResultEl.classList.remove('hidden');
+        loginResultEl.className = 'result error';
+        loginResultEl.textContent = err.message;
+      }
+    });
+
+    document.getElementById('loginBackBtn').addEventListener('click', () => {
+      loginStep2.classList.add('hidden');
+      loginStepOtp.classList.add('hidden');
+      loginStep1.classList.remove('hidden');
+      sessionToken = '';
+    });
+
+    document.getElementById('loginPwBtn').addEventListener('click', async () => {
+      const password = document.getElementById('loginPassword').value;
+      if (!password || !sessionToken) return;
+      loginResultEl.className = 'result';
+      loginResultEl.textContent = 'Verifying…';
+      loginResultEl.classList.remove('hidden');
+      try {
+        const res = await fetch(`${baseUrl}/api/v1/login/verify-password`, {
+          method: 'POST',
+          headers: apiHeaders(),
+          body: JSON.stringify({ session_token: sessionToken, password }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          loginResultEl.className = 'result error';
+          loginResultEl.textContent = data.error || 'Invalid password';
+          return;
+        }
+        if (data.require_otp) {
+          loginStep2.classList.add('hidden');
+          loginStepOtp.classList.remove('hidden');
+          document.getElementById('loginOtp').value = '';
+          loginResultEl.textContent = 'Check your email for the code.';
+        } else if (data.require_face) {
+          loginResultEl.className = 'result error';
+          loginResultEl.textContent = 'Face verification is required. Sign in at the main app: http://localhost:3000/login';
+        } else {
+          await doLoginComplete();
+        }
+      } catch (err) {
+        loginResultEl.className = 'result error';
+        loginResultEl.textContent = err.message;
+      }
+    });
+
+    document.getElementById('loginOtpBtn').addEventListener('click', async () => {
+      const otp = document.getElementById('loginOtp').value.trim();
+      if (!otp || !sessionToken) return;
+      loginResultEl.textContent = 'Verifying…';
+      try {
+        const res = await fetch(`${baseUrl}/api/v1/login/verify-otp`, {
+          method: 'POST',
+          headers: apiHeaders(),
+          body: JSON.stringify({ session_token: sessionToken, otp }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          loginResultEl.className = 'result error';
+          loginResultEl.textContent = data.error || 'Invalid code';
+          return;
+        }
+        if (data.require_face) {
+          loginResultEl.className = 'result error';
+          loginResultEl.textContent = 'Face verification required. Sign in at http://localhost:3000/login';
+        } else {
+          await doLoginComplete();
+        }
+      } catch (err) {
+        loginResultEl.className = 'result error';
+        loginResultEl.textContent = err.message;
+      }
+    });
+
+    async function doLoginComplete() {
+      try {
+        const res = await fetch(`${baseUrl}/api/v1/login/complete`, {
+          method: 'POST',
+          headers: apiHeaders(),
+          body: JSON.stringify({ session_token: sessionToken }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.ok) {
+          loginResultEl.className = 'result success';
+          loginResultEl.innerHTML = 'Signed in as <strong>' + (data.user && data.user.username) + '</strong>. ';
+          loginResultEl.innerHTML += 'Access token received (use it for API calls).';
+          loginResultEl.innerHTML += '<pre>' + JSON.stringify({ user: data.user, token_type: data.token_type, expires_in: data.expires_in }, null, 2) + '</pre>';
+          loginStep2.classList.add('hidden');
+          loginStepOtp.classList.add('hidden');
+          loginStep1.classList.remove('hidden');
+          sessionToken = '';
+        } else {
+          loginResultEl.className = 'result error';
+          loginResultEl.textContent = data.error || 'Complete failed';
+        }
+      } catch (err) {
+        loginResultEl.className = 'result error';
+        loginResultEl.textContent = err.message;
+      }
+    }
+  </script>
+</body>
+</html>
